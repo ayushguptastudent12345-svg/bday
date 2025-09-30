@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Birthday Card</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display&display=swap');
+
+  /* Reset and base */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Playfair Display', serif;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6, #f472b6);
+    background-size: 400% 400%;
+    animation: gradient-bg 15s ease infinite;
+    color: white;
+    overflow-x: hidden;
+  }
+
+  @keyframes gradient-bg {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+  }
+
+  /* Container */
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  /* Common styles */
+  h1 {
+    font-family: 'Great Vibes', cursive;
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+  }
+
+  button, .clickable {
+    cursor: pointer;
+    user-select: none;
+    font-family: 'Great Vibes', cursive;
+    font-size: 2.5rem;
+    background: transparent;
+    border: 2px solid white;
+    border-radius: 12px;
+    padding: 0.5rem 1.5rem;
+    color: white;
+    transition: background-color 0.3s, transform 0.2s;
+    margin: 1rem 0;
+  }
+  button:hover, .clickable:hover {
+    background-color: rgba(255 255 255 / 0.2);
+    transform: scale(1.05);
+  }
+  button:active, .clickable:active {
+    transform: scale(0.9);
+  }
+
+  /* Poem container */
+  #poem {
+    max-width: 600px;
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+  #poem div {
+    opacity: 0;
+    transform: translateY(10px);
+    animation-fill-mode: forwards;
+  }
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Letter container */
+  #letter {
+    max-width: 600px;
+    background: rgba(255 255 255 / 0.1);
+    padding: 1.5rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  #letter.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Footer signature */
+  #signature {
+    font-family: 'Great Vibes', cursive;
+    font-size: 2rem;
+    margin-top: 1.5rem;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  #signature.visible {
+    opacity: 1;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    pointer-events: none;
+    top: 0; left: 0; width: 100%; height: 100%;
+    overflow: visible;
+    z-index: 9999;
+  }
+  .confetti-piece {
+    position: absolute;
+    font-size: 1.5rem;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    opacity: 1;
+  }
+  @keyframes fall {
+    0% {
+      transform: translateY(-10vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(110vh) rotate(360deg);
+      opacity: 0.9;
+    }
+  }
+
+  /* Navigation buttons */
+  #nextBtn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    font-family: 'Great Vibes', cursive;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% {opacity: 1;}
+    50% {opacity: 0.6;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Page 1 -->
+  <div id="page1">
+    <button id="openBtn" aria-label="Open birthday card">📩 Open Me 📩</button>
+    <h1>🎉 Happy Birthday Baby 🎉</h1>
+  </div>
+
+  <!-- Page 2 -->
+  <div id="page2" style="display:none;">
+    <h1>My Fire for You</h1>
+    <div id="poem" aria-live="polite" aria-atomic="true"></div>
+    <div id="nextBtn" tabindex="0" role="button" aria-label="Go to letter page">That’s not the end →</div>
+  </div>
+
+  <!-- Page 3 -->
+  <div id="page3" style="display:none;">
+    <div id="letter"></div>
+    <div id="signature">— Your Only God</div>
+  </div>
+</div>
+
+<div class="confetti" aria-hidden="true"></div>
+
+<script>
+  // Poem lines
+  const poemLines = [
+    "If the wind bites your skin, I’ll steal the skies,",
+    "Gather the sun in my desperate eyes.",
+    "I’d shatter the stars to light your way,",
+    "Turn endless night into a burning day.",
+    "If the rain falls hard, I’ll chase each drop,",
+    "Drown in its fury, never to stop.",
+    "I’d fight the storm with my bare hands,",
+    "Just to lay you safe where your heart lands.",
+    "I’d bend the world to your laughter’s tune,",
+    "Make the oceans dance, command the moon.",
+    "Every breath I take burns with your name,",
+    "Every heartbeat screams your untamed flame.",
+    "If shadows loom, I’ll tear them apart,",
+    "Cradle the dark so it won’t touch your heart.",
+    "I’ll be the chaos, the fire, the storm,",
+    "The wild devotion that keeps you warm.",
+    "No distance too far, no night too long,",
+    "I’ll walk through madness to keep you strong.",
+    "You’re my obsession, my sweetest sin,",
+    "The only war I’d fight to win.",
+    "Happy birthday, my wildest desire,",
+    "You are my flame, my endless fire."
+  ];
+
+  // Letter text
+  const letterText = `My Darling Sweetheart,
+
+It’s your birthday today, yet somehow I feel like I’ve been given the gift. Because in every glance, in every whispered word, every shiver of your laugh, You wrap around me like smoke in a cold, endless night. You make me feel alive in the dark, And even when the world is cruel and hollow, I find fire, obsession, and a strange kind of peace in you.
+
+So today, I don’t just celebrate you—I celebrate us, Our madness, our chaos, and every way you haunt me beautifully.
+
+A romantic to-do list for us, my sweet little mouse :
+
+I want to lie on a high mountain, my head on your lap, Counting stars until our hearts forget the world.
+
+I want to kiss you so badly that we’re out of breath, Our lips and tongues writing secret stories only we can read.
+
+I want to hug you so tight that you start smelling like me, Leaving traces of our wildness on your skin.
+
+I want to watch web series and movies under a blanket, Fingers entwined, teasing touches that make us bite our lips.
+
+I want to sleep with you, naked under a blanket, Wrapping you so close that every inch of you belongs to me.
+
+I want to trace your curves with my lips and hands, Whispering naughty words that make you shiver in delight.
+
+I want to pull you close, breathe you in, and feel your pulse race As our bodies speak the language no words can hold.
+
+I want to tease, touch, and lose myself in you completely, Until we both forget where we end and the night begins.
+
+I want to wake you gently, feel your warmth pressed to mine, And steal soft, hungry kisses that last until noon.
+
+Happy birthday, my dark, beautiful chaos. You are my storm, my obsession, my haunting delight, And I would give every heartbeat, every breath, every wild fantasy, Just to see you smile and know that I am yours.
+
+Forever and recklessly yours,
+You know me, isn’t it?`;
+
+  // Elements
+  const page1 = document.getElementById('page1');
+  const page2 = document.getElementById('page2');
+  const page3 = document.getElementById('page3');
+  const openBtn = document.getElementById('openBtn');
+  const poemContainer = document.getElementById('poem');
+  const nextBtn = document.getElementById('nextBtn');
+  const letter = document.getElementById('letter');
+  const signature = document.getElementById('signature');
+  const confettiContainer = document.querySelector('.confetti');
+
+  // State
+  let poemIndex = 0;
+  let poemInterval;
+
+  // Confetti emojis
+  const confettiEmojis = ['🎉','💖','🌟','✨','🌹','🎂'];
+
+  // Create confetti pieces
+  function createConfetti() {
+    for(let i=0; i<40; i++) {
+      const span = document.createElement('span');
+      span.classList.add('confetti-piece');
+      span.style.left = `${Math.random()*100}%`;
+      span.style.top = `${-10 - Math.random()*20}%`;
+      span.style.fontSize = `${12 + Math.random()*16}px`;
+      span.style.animationDuration = `${3 + Math.random()*2}s`;
+      span.style.animationDelay = `${Math.random()*2}s`;
+      span.style.transform = `rotate(${Math.random()*360}deg)`;
+      span.textContent = confettiEmojis[Math.floor(Math.random()*confettiEmojis.length)];
+      confettiContainer.appendChild(span);
+
+      // Remove confetti after animation
+      span.addEventListener('animationend', () => {
+        span.remove();
+        // Create new confetti to keep it continuous
+        createConfettiPiece();
+      });
+    }
+  }
+  function createConfettiPiece() {
+    const span = document.createElement('span');
+    span.classList.add('confetti-piece');
+    span.style.left = `${Math.random()*100}%`;
+    span.style.top = `${-10 - Math.random()*20}%`;
+    span.style.fontSize = `${12 + Math.random()*16}px`;
+    span.style.animationDuration = `${3 + Math.random()*2}s`;
+    span.style.animationDelay = `${Math.random()*2}s`;
+    span.style.transform = `rotate(${Math.random()*360}deg)`;
+    span.textContent = confettiEmojis[Math.floor(Math.random()*confettiEmojis.length)];
+    confettiContainer.appendChild(span);
+    span.addEventListener('animationend', () => {
+      span.remove();
+      createConfettiPiece();
+    });
+  }
+
+  // Show poem lines one by one with animation
+  function showPoemLines() {
+    if (poemIndex >= poemLines.length) {
+      clearInterval(poemInterval);
+      nextBtn.style.display = 'inline-block';
+      nextBtn.focus();
+      return;
+    }
+    const lineDiv = document.createElement('div');
+    lineDiv.textContent = poemLines[poemIndex];
+    lineDiv.style.animation = 'fadeInUp 0.6s ease forwards';
+    poemContainer.appendChild(lineDiv);
+    poemIndex++;
+  }
+
+  // Event handlers
+  openBtn.addEventListener('click', () => {
+    page1.style.display = 'none';
+    page2.style.display = 'block';
+    nextBtn.style.display = 'none';
+    poemContainer.innerHTML = '';
+    poemIndex = 0;
+    showPoemLines();
+    poemInterval = setInterval(showPoemLines, 700);
+    createConfetti();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    page2.style.display = 'none';
+    page3.style.display = 'block';
+    letter.textContent = letterText;
+    letter.classList.add('visible');
+    signature.classList.add('visible');
+    createConfetti();
+  });
+
+  // Keyboard accessibility for nextBtn
+  nextBtn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      nextBtn.click();
+    }
+  });
+
+  // Initial confetti on page 1
+  createConfetti();
+</script>
+
+</body>
+</html>
